@@ -1,1 +1,1 @@
-const server = "https://info2602ps--snickdx.repl.co";
+const server = "https://glacial-falls-22285.herokuapp.com/";
