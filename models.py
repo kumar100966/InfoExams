@@ -1,18 +1,51 @@
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
 db = SQLAlchemy()
-import datetime
+
+#Code imported from assignment 2
+
+#Class to model User
+class User(db.Model):
+	id = db.Column('id', db.Integer, primary_key=True) 
+	username = db.Column("username", db.String(50), unique=True, nullable=False) 
+	email = db.Column("email", db.String(50), unique=True, nullable=False) 
+	password = db.Column("password", db.String(50)) 
+
+	def toDict(self): 
+		return {
+			"id": self.id, 
+			"username": self.username, 
+			"email": self.email, 
+			"password": self.password
+		}
+
+	def set_password(self, password): 
+		self.password = generate_password_hash(password, method="sha256")
+
+	def check_password(self, password): 
+		return check_password_hash(self.password, password) 
 
 
-class Logs(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    studentId =  db.Column(db.Integer, nullable=False)
-    stream = db.Column(db.Integer, nullable=False)
-    created = db.Column(db.DateTime, default=datetime.datetime.utcnow)
+
+
+
+class Post(db.Model):
+    id = db.Column('id', db.Integer, primary_key=True)
+    userId = db.Column(db.Integer, db.ForeignKey('user.id'))
+    text = db.Column('text', db.String(50))
+    reacts = db.relationship("UserReact")
+    likes = 0 
+    dislikes = 0
+
+
 
     def toDict(self):
         return{
-            'id': self.id,
-            'studentId': self.studentId,
-            'stream': self.stream,
-            'created': self.created.strftime("%m/%d/%Y, %H:%M:%S")
+            "id": self.id,  
+            "userId": self.userId,
+            "text": self.text,
+            "defense": self.defense, 
+            
         }
