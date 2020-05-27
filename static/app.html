@@ -4,6 +4,7 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	
 	<title>Frontend App</title>
 		<!--Import Google Icon Font-->
 	<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
@@ -12,17 +13,20 @@
 </head>
 <body>
 
-	<div class="center-align">
-		<h1>Welcome John</h1>
+	<div class="center-align"  id = "welcome">
+		<!--
+			<h1>Welcome John</h1>
+		-->
+		
 	</div>
 
 	<div class="container">
 		<div class="row" style="border: 1px grey solid;">
-			<form class="col s12">
+			<form class="col s12" id="myForm">
 				<div class="row">
 					<div class="input-field col s12">
-						<textarea id="textarea1" class="materialize-textarea"></textarea>
-						<label for="textarea1">Textarea</label>
+						<textarea id="text" name="text" class="materialize-textarea"></textarea>
+						<label for="text">Textarea</label>
 					</div>
 				</div>
 				<div class="row">
@@ -35,9 +39,10 @@
 	</div>
 
 
-	<div class="container">
-		
-		<div class="card blue-grey darken-1">
+	<div class="container" id="content">
+
+		<!--
+			<div class="card blue-grey darken-1">
 			<div class="card-content white-text">
 				<span class="card-title">User: John</span>
 				<p>
@@ -73,20 +78,262 @@
 				
 			</div>
 		</div>
+		-->
+		
+		
 		
 	</div>
 	
 
 	<script src="server.js"></script>
 
+
+
 	<script>
+
+		
 		//Use the server global variable for ALL http request to your flask App
 		//Set the variable in server.js
 		console.log(server);
 
+		var token = localStorage.getItem("token"); 
+
 		//enter ALL javascript for you app here
+
+		function printWelcome(){
+            greet = document.querySelector("#welcome"); 
+            greet.innerHTML= `
+				<h1>
+					Welcome ${localStorage.getItem("username")}
+				</h1>`; 
+		}
 		
 
+		async function retrievePosts(){
+	
+			try{ 
+				let response = await fetch(`${server}/posts`, {
+					method: "GET", 
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `JWT ${token}`
+					}
+				}); 
+
+				if(response.ok){
+					let result = await response.json(); 
+					generateContent(result); 
+
+				}else{
+					return null; 
+				}
+
+			}catch(e){
+				console.log(e); 
+			}  
+		}
+
+
+		function generateContent(results){
+			content = document.querySelector("#content"); 
+			content.innerHTML= ''; 
+			for(post of results){
+
+				if(post.owner){
+					content.innerHTML+=
+					`
+					<div class="card blue-grey darken-1">
+						<div class="card-content white-text">
+							<span class="card-title">User: ${post.username}</span>
+							<p>
+								${post.text} 
+							</p>
+
+							
+						</div>
+						<div class="card-action row">
+
+							<div class="col">
+								<span class="white-text">Like: ${post.likes}</span>
+								<span class="white-text">Dislike: ${post.dislikes}</span>
+							</div>
+							
+							<div class="col ">
+								
+								<select name="react" id="react" style="display: block; " onchange="updateDB(${post.id}, '${post.react}', this.selectedIndex)">
+									<option value="" disabled selected>Choose your option</option>
+									<option value="like">Like</option>
+									<option value="dislike">Dislike</option>
+								</select>
+
+							</div>
+							
+
+							<div class="col">
+								<button class="waves-effect waves-light btn" onclick="deletePost(${post.id})">Delete</button>
+							</div>
+							
+							
+							
+						</div>
+					</div>
+					`; 
+				}else{
+					content.innerHTML+=
+					`
+					<div class="card blue-grey darken-1">
+						<div class="card-content white-text">
+							<span class="card-title">User: ${post.username}</span>
+							<p>
+								${post.text} 
+							</p>
+
+							
+						</div>
+						<div class="card-action row">
+
+							<div class="col">
+								<span class="white-text">Like: ${post.likes}</span>
+								<span class="white-text">Dislike: ${post.dislikes}</span>
+							</div>
+							
+							<div class="col ">
+
+								<select name="react" id="react" style="display: block; " onchange="updateDB(${post.id}, '${post.react}', this.selectedIndex)">
+									<option value="" disabled selected>Choose your option</option>
+									<option value="like">Like</option>
+									<option value="dislike">Dislike</option>
+								</select>
+								
+							</div>						
+							
+						</div>
+					</div>
+					`; 
+				}
+			}
+		}
+
+
+		var myform = document.querySelector("#myForm"); 
+
+		myform.addEventListener("submit", submit); 
+
+		async function submit(event){
+
+			try{ 
+				event.preventDefault();
+				myform = event.target.elements;
+
+				let data = {
+						text: myform["text"].value, 
+				}; 
+			
+
+				let response = await fetch(`${server}/createPost`, {
+					method: "POST", 
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `JWT ${token}`
+					},
+					body: JSON.stringify(data) 
+				}); 
+
+				if(response.ok){
+					retrievePosts(); 
+
+				}else{
+					return null; 
+				}
+
+			}catch(e){
+				console.log(e);  
+			}  
+		}
+
+		async function updateDB(postId, postReact, value){
+			try{ 
+
+				console.log(postReact); 
+
+				let response= null; 
+
+				if(value==1){
+					value = 'like'; 
+				}else{
+					value = 'dislike'; 
+				}
+
+				let data = {
+						'postId': postId, 
+						'react': value
+					}; 
+
+				if(postReact == 'null' || postReact == null || postReact == ''){
+
+						response = await fetch(`${server}/reactToPost`, {
+						method: "POST", 
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `JWT ${token}`
+						},
+						body: JSON.stringify(data) 
+					}); 
+
+				}else{
+
+						response = await fetch(`${server}/changeReact`, {
+						method: "PUT", 
+						headers: {
+							'Content-Type': 'application/json',
+							'Authorization': `JWT ${token}`
+						},
+						body: JSON.stringify(data) 
+					}); 
+
+				}
+				
+
+				if(response.ok){
+					location.reload();
+
+				}else{
+					return null; 
+				}
+
+			}catch(e){
+				console.log(e);  
+			}  
+		}
+
+
+		async function deletePost(postId){
+			
+			try{ 
+
+				let response = await fetch(`${server}/mypost/${postId}`, {
+					method: "DELETE", 
+					headers: {
+						'Content-Type': 'application/json',
+						'Authorization': `JWT ${token}`
+					},
+				}); 
+
+				if(response.ok){
+					location.reload();
+
+				}else{
+					return null; 
+				}
+
+			}catch(e){
+				console.log(e);  
+			}  
+
+		}
+		
+		printWelcome(); 
+		retrievePosts(); 
 	</script>
 
 

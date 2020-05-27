@@ -1,1 +1,1 @@
-const server = "https://glacial-falls-22285.herokuapp.com/";
+const server = "http://127.0.0.1:8080";

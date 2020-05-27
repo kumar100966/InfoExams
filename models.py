@@ -29,23 +29,55 @@ class User(db.Model):
 
 
 
+class UserReact(db.Model):
+	id = db.Column('id', db.Integer, primary_key=True)
+	userId = db.Column('userId', db.Integer, db.ForeignKey('user.id'))
+	postId = db.Column('postId', db.Integer, db.ForeignKey('post.id'))
+	react = db.Column("react", db.String(10))
+	#Look at only storing two possible string values within the attribute. 
+
+
+
+
 
 
 class Post(db.Model):
-    id = db.Column('id', db.Integer, primary_key=True)
-    userId = db.Column(db.Integer, db.ForeignKey('user.id'))
-    text = db.Column('text', db.String(50))
-    reacts = db.relationship("UserReact")
-    likes = 0 
-    dislikes = 0
+	id = db.Column('id', db.Integer, primary_key=True)
+	userId = db.Column(db.Integer, db.ForeignKey('user.id'))
+	text = db.Column('text', db.String(50))
+	reacts = db.relationship("UserReact")
+
+	def getTotalLikes(self):
+		reacts = UserReact.query.filter(UserReact.postId==self.id).all()
+		like = 0
+		if reacts:
+			for react in reacts: 
+				if react.react == "like": 
+					like +=1
+			return like
+		return 0
+
+	def getTotalDislikes(self):
+		reacts = UserReact.query.filter(UserReact.postId==self.id).all()
+		dislike = 0
+		if reacts:
+			for react in reacts: 
+				if react.react == "dislike": 
+					dislike +=1
+			return dislike
+		return 0
 
 
 
-    def toDict(self):
-        return{
-            "id": self.id,  
-            "userId": self.userId,
-            "text": self.text,
-            "defense": self.defense, 
-            
-        }
+	def toDict(self):
+
+		user = User.query.filter(User.id == self.userId).first()
+
+		return{
+			"id": self.id,  
+			"userId": self.userId,
+			"username": user.username, 
+			"text": self.text,
+			"likes": self.getTotalLikes(), 
+			"dislikes": self.getTotalDislikes()
+		}
